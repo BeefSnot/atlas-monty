@@ -16,9 +16,9 @@ void push(stack_t **h, __attribute((unused))unsigned int ln)
         fprintf(stderr, "Error: malloc failed\n");
         exit(37);
     }
-
+    
     new->prev = NULL;
-
+    
     if (*h == NULL)
     {
         new->next = NULL;
@@ -38,7 +38,7 @@ void push(stack_t **h, __attribute((unused))unsigned int ln)
 void pall_recursive(stack_t *node)
 {
     if (node == NULL)
-        return;
+    return;
 
     printf("%d\n", node->n);
     pall_recursive(node->next);
@@ -102,7 +102,7 @@ void swap(stack_t **h, unsigned int ln)
 {
     stack_t *temp;
     int x;
-
+    
     if (*h == NULL || (*h)->next == NULL)
     {
         fprintf(stderr, "L%d: can't swap, stack too short\n", ln);
