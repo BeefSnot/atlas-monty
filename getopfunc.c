@@ -90,38 +90,72 @@ void push(stack_t **stack, char **args, unsigned int l)
  *
  * Return: no return
  */
-
 void pall(stack_t **stack, char **args, unsigned int l)
 {
-	size_t  nodecount;
-	stack_t *current = *stack;
+    size_t nodecount;
+    stack_t *current = *stack;
 
-	(void)args;
-	(void)l;
-	nodecount = 0;
-	while (current != NULL)
-	{
-		printf("%d\n",current->n);
-		current = current->next;
-		nodecount++;
-	}
+    (void)args;
+    (void)l;
+    nodecount = 0;
+    while (current != NULL)
+    {
+        printf("%d\n", current->n);
+        current = current->next;
+        nodecount++;
+    }
 }
 
 /**
- * free_stack()- frees a stack
+ * free_stack - frees a stack
  * @stack: the stack
  *
  * Return: no return
  */
-
 void free_stack(stack_t **stack)
 {
-	stack_t *current = *stack;
+    stack_t *current = *stack;
 
-	while (current != NULL)
-	{
-		stack_t *next = current->next;
-		free(current);
-		current = next;
-	}
+    while (current != NULL)
+    {
+        stack_t *next = current->next;
+        free(current);
+        current = next;
+    }
+}
+
+/**
+ * getopfunc - gets a pointer to the operation function
+ * @stack: the stack
+ * @args: the argument array
+ * @l: the line number
+ *
+ * Return: pointer to the function that corresponds to the opcode
+ */
+void (*getopfunc(stack_t **stack, char **args, unsigned int l))(stack_t **stack, char **args, unsigned int l)
+{
+    instruction_t ops[] = {
+        {"push", push},
+        {"pall", pall},
+        {"pint", pint},
+        {"pop", pop},
+        {"swap", swap},
+        {"add", add},
+        {"nop", nop},
+        {NULL, NULL}
+    };
+    int i = 0;
+
+    while (ops[i].opcode)
+    {
+        if (strcmp(args[0], ops[i].opcode) == 0)
+            return (ops[i].f);
+        i++;
+    }
+    fprintf(stderr, "L%u: unknown instruction %s\n", l, args[0]);
+    free_stack(stack);
+    free_tokens(args);
+    free(args);
+    fclose(fd);
+    return (NULL);
 }

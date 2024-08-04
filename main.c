@@ -1,3 +1,5 @@
+#include "monty.h"
+
 FILE *fd = NULL;
 
 /**
@@ -7,66 +9,55 @@ FILE *fd = NULL;
  *
  * Return: 0 on success, 1 on failure
  */
-int main(int ac, char **av)
+int main(int argc, char **argv)
 {
-    char *buffer = NULL;
-    char **tokens;
-    size_t n = 0;
-    ssize_t neg = -1;
-    unsigned int linenum = 1;
-    int status = 0;
+    FILE *fd;
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t read;
     stack_t *stack = NULL;
+    unsigned int line_number = 0;
+    char **args;
+    void (*op_func)(stack_t **stack, char **args, unsigned int l);
 
-    tokens = malloc(sizeof(char *) * 100);
-    if (tokens == NULL)
-    {
-        fprintf(stderr, "Error: malloc failed\n");
-        exit(EXIT_FAILURE);
-    }
-
-    if (ac < 2)
+    if (argc != 2)
     {
         fprintf(stderr, "USAGE: monty file\n");
-        free(tokens);
         exit(EXIT_FAILURE);
     }
 
-    fd = fopen(av[1], "r");
+    fd = fopen(argv[1], "r");
     if (fd == NULL)
     {
-        fprintf(stderr, "Error: Can't open file %s\n", av[1]);
-        free(tokens);
+        fprintf(stderr, "Error: Can't open file %s\n", argv[1]);
         exit(EXIT_FAILURE);
     }
 
-    while ((getline(&buffer, &n, fd)) != neg)
+    while ((read = getline(&line, &len, fd)) != -1)
     {
-        if (empty(buffer) < 0)
+        line_number++;
+        args = tokenize(line);
+        if (args[0] == NULL || args[0][0] == '#')
         {
-            linenum++;
+            free_tokens(args);
             continue;
         }
-        tokenize(tokens, buffer);
-        if (getopfunc(&stack, tokens, linenum) == NULL)
+
+        op_func = getopfunc(&stack, args, line_number);
+        if (op_func == NULL)
         {
-            status = 1;
-            break;
+            free(line);
+            fclose(fd);
+            exit(EXIT_FAILURE);
         }
-        getopfunc(&stack, tokens, linenum)(&stack, tokens, linenum);
-        free_tokens(tokens);
-        linenum++;
+
+        op_func(&stack, args, line_number);
+        free_tokens(args);
     }
 
-    free(buffer);
-    free(tokens);
-    free_stack(&stack);
+    free(line);
     fclose(fd);
-
-    if (status != 0)
-    {
-        exit(EXIT_FAILURE);
-    }
-
+    free_stack(&stack);
     return (EXIT_SUCCESS);
 }
 
