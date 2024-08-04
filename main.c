@@ -1,70 +1,82 @@
-#include "monty.h"
-
 FILE *fd = NULL;
 
 /**
- * main()- the entry to the file!
+ * main - the entry to the file!
  * @ac: number of args passed
  * @av: argument vector
  *
- * Return: 0 on success
+ * Return: 0 on success, 1 on failure
  */
-
 int main(int ac, char **av)
 {
-    char *buffer;
+    char *buffer = NULL;
     char **tokens;
-    size_t n, linenum;
-    ssize_t neg;
-    int status;
+    size_t n = 0;
+    ssize_t neg = -1;
+    unsigned int linenum = 1;
+    int status = 0;
     stack_t *stack = NULL;
 
-    n = 0, status = 0; neg = -1, linenum = 1, buffer = NULL;
     tokens = malloc(sizeof(char *) * 100);
+    if (tokens == NULL)
+    {
+        fprintf(stderr, "Error: malloc failed\n");
+        exit(EXIT_FAILURE);
+    }
+
     if (ac < 2)
     {
         fprintf(stderr, "USAGE: monty file\n");
+        free(tokens);
         exit(EXIT_FAILURE);
     }
+
     fd = fopen(av[1], "r");
     if (fd == NULL)
     {
         fprintf(stderr, "Error: Can't open file %s\n", av[1]);
+        free(tokens);
         exit(EXIT_FAILURE);
     }
-read_line:
-    if ((getline(&buffer, &n, fd)) != neg)
+
+    while ((getline(&buffer, &n, fd)) != neg)
     {
         if (empty(buffer) < 0)
         {
             linenum++;
-            goto read_line;
+            continue;
         }
         tokenize(tokens, buffer);
+        if (getopfunc(&stack, tokens, linenum) == NULL)
+        {
+            status = 1;
+            break;
+        }
         getopfunc(&stack, tokens, linenum)(&stack, tokens, linenum);
         free_tokens(tokens);
         linenum++;
-        goto read_line;
     }
+
     free(buffer);
     free(tokens);
     free_stack(&stack);
     fclose(fd);
-    if (status < 0)
+
+    if (status != 0)
     {
         exit(EXIT_FAILURE);
     }
-    return (0);
+
+    return (EXIT_SUCCESS);
 }
 
 /**
- * tokenize()- tokenizes buffer
+ * tokenize - tokenizes buffer
  * @tokens: the token bucket
  * @buffer: the buffer we're reading from
  *
  * Return: no return
  */
-
 void tokenize_recursive(char **tokens, char *buffer, int i)
 {
     char *token;
@@ -79,8 +91,7 @@ void tokenize_recursive(char **tokens, char *buffer, int i)
     tokens[i] = malloc(strlen(token) + 1);
     if (tokens[i] == NULL)
     {
-        printf("Token failed!");
-        fprintf(stderr, "Could not allocate memory for token");
+        fprintf(stderr, "Error: malloc failed\n");
         free_tokens(tokens);
         return;
     }
@@ -95,12 +106,11 @@ void tokenize(char **tokens, char *buffer)
 }
 
 /**
- * free_tokens()- frees token array
+ * free_tokens - frees token array
  * @tokens: the array of tokens to free
  *
  * Return: no return
  */
-
 void free_tokens_recursive(char **tokens, int i)
 {
     if (tokens[i] == NULL)
